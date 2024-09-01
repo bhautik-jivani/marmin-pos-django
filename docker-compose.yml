@@ -1,0 +1,39 @@
+services:
+  backend:
+    build: 
+      context: ./pos_backend
+      dockerfile: Dockerfile
+    # command: python manage.py runserver 0.0.0.0:8100
+    # command: gunicorn pos_backend.marmin_pos_project.wsgi:application --bind 0.0.0.0:8100
+    command: gunicorn pos_backend.marmin_pos_project.wsgi:application --bind 0.0.0.0:8100 --access-logfile '/var/log/gunicorn/access.log' --error-logfile '/var/log/gunicorn/error.log'
+    volumes:
+      - .:/marmin_pos
+      - ./log/django_log:/var/log
+      - ./log/gunicorn:/var/log/gunicorn
+    ports:
+      - "8100:8100"
+    environment:
+      - ./env.local
+    depends_on:
+      - db
+
+  db:
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - ./env.local
+
+  nginx:
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    volumes:
+      - ./log/nginx:/var/log/nginx
+
+volumes:
+  postgres_data:
